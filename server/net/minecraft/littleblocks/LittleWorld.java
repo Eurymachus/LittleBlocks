@@ -4,10 +4,15 @@ import net.minecraft.littleblocks.network.PacketHandler;
 import net.minecraft.src.Block;
 import net.minecraft.src.Chunk;
 import net.minecraft.src.Entity;
+import net.minecraft.src.EntityPlayer;
 import net.minecraft.src.EnumSkyBlock;
+import net.minecraft.src.IChunkProvider;
+import net.minecraft.src.ISaveHandler;
+import net.minecraft.src.ModLoader;
 import net.minecraft.src.MovingObjectPosition;
+import net.minecraft.src.Profiler;
 import net.minecraft.src.TileEntity;
-import net.minecraft.src.Vec3D;
+import net.minecraft.src.Vec3;
 import net.minecraft.src.World;
 import net.minecraft.src.WorldProvider;
 import net.minecraft.src.WorldSettings;
@@ -15,33 +20,33 @@ import net.minecraft.src.WorldSettings;
 public class LittleWorld extends World {
 
 	private final World realWorld;
-
 	public LittleWorld(World world, WorldProvider worldprovider) {
-		super(world.getSaveHandler(), "", new WorldSettings(world
+		super(world.getSaveHandler(), "", worldprovider, new WorldSettings(world
 				.getWorldInfo().getSeed(), world.getWorldInfo().getGameType(),
 				world.getWorldInfo().isMapFeaturesEnabled(), world
 						.getWorldInfo().isHardcoreModeEnabled(), world
 						.getWorldInfo().getTerrainType()), null);
-		// Server client super(world, worldprovider);
 		LittleBlocks.realWorld = world;
 		realWorld = world;
-		worldInfo = world.getWorldInfo();
 	}
 
-	// Eury START Client
-	// public int getLightBrightnessForSkyBlocks(int i, int j, int k, int l) {
-	// return realWorld.getLightBrightnessForSkyBlocks(i >> 3, j >> 3, k >> 3,
-	// l);
-	// }
-
-	// public float getBrightness(int i, int j, int k, int l) {
-	// return realWorld.getBrightness(i >> 3, j >> 3, k >> 3, l);
-	// }
-	// Eury END Client
-
+	// Eury START
 	@Override
-	protected void generateSpawnPoint() {
+	protected IChunkProvider createChunkProvider() {
+		// TODO Auto-generated method stub
+		return null;
 	}
+	
+	public int getLightBrightnessForSkyBlocks(int i, int j, int k, int l) {
+		return realWorld.getLightBrightnessForSkyBlocks(i >> 3, j >> 3, k >> 3,
+				l);
+	}
+
+	public float getBrightness(int i, int j, int k, int l) {
+		return realWorld.getBrightness(i >> 3, j >> 3, k >> 3, l);
+	}
+
+	// Eury END
 
 	public boolean isOutdated(World world) {
 		return realWorld != world;
@@ -143,7 +148,7 @@ public class LittleWorld extends World {
 			int currentId = tile.getContent(x & 7, y & 7, z & 7);
 			int currentData = tile.getMetadata(x & 7, y & 7, z & 7);
 			if (currentId != id || currentData != metadata) {
-				tile.setContent(x & 7, y & 7, z & 7, id, metadata);
+				tile.setContent(x & 7, y & 7, z & 7, id, metadata, ModLoader.getMinecraftInstance().thePlayer);
 				flag = true;
 			}
 			realWorld.updateAllLightTypes(x >> 3, y >> 3, z >> 3);
@@ -173,7 +178,7 @@ public class LittleWorld extends World {
 					.getBlockTileEntity(x >> 3, y >> 3, z >> 3);
 			int currentId = tile.getContent(x & 7, y & 7, z & 7);
 			if (currentId != id) {
-				tile.setContent(x & 7, y & 7, z & 7, id);
+				tile.setContent(x & 7, y & 7, z & 7, id, ModLoader.getMinecraftInstance().thePlayer);
 				flag = true;
 			}
 			realWorld.updateAllLightTypes(x >> 3, y >> 3, z >> 3);
@@ -264,15 +269,13 @@ public class LittleWorld extends World {
 		}
 	}
 
-	public void idModified(int x, int y, int z, int lastId, int newId) {
+	public void idModified(int x, int y, int z, int lastId, int newId, EntityPlayer entityplayer) {
 		if (lastId != 0) {
-			Block.blocksList[lastId].onBlockRemoval(this, x, y, z);
+			Block.blocksList[lastId].onBlockHarvested(this, x, y, z, 0, entityplayer);
 		}
 		this.updateAllLightTypes(x, y, z);
 		if (newId != 0) {
-			// if(!this.isRemote) {
 			Block.blocksList[newId].onBlockAdded(this, x, y, z);
-			// } Client
 		}
 
 		PacketHandler.Output.idModified(x, y, z, lastId, newId, this);
@@ -382,7 +385,7 @@ public class LittleWorld extends World {
 	}
 
 	@Override
-	public MovingObjectPosition rayTraceBlocks_do_do(Vec3D vec3d, Vec3D vec3d1,
+	public MovingObjectPosition rayTraceBlocks_do_do(Vec3 vec3d, Vec3 vec3d1,
 			boolean flag, boolean flag1) {
 		vec3d.xCoord *= 8;
 		vec3d.yCoord *= 8;

@@ -5,6 +5,7 @@ import java.util.List;
 
 import net.minecraft.littleblocks.network.EurysNetworkCore.PacketPayload;
 import net.minecraft.littleblocks.network.EurysNetworkCore.PacketTileEntityLB;
+import net.minecraft.src.EntityPlayer;
 import net.minecraft.src.NBTTagCompound;
 import net.minecraft.src.NBTTagInt;
 import net.minecraft.src.NBTTagList;
@@ -22,7 +23,7 @@ public class TileEntityLittleBlocks extends TileEntity {
 
 	private static LittleWorld littleWorld;
 
-	public TileEntityLittleBlocks() {
+	public TileEntityLittleBlocks(World world) {
 		for (int x = 0; x < content.length; x++) {
 			for (int y = 0; y < content[x].length; y++) {
 				for (int z = 0; z < content[x][y].length; z++) {
@@ -38,6 +39,7 @@ public class TileEntityLittleBlocks extends TileEntity {
 				}
 			}
 		}
+		this.worldObj = world;
 	}
 
 	public boolean isEmpty() {
@@ -145,7 +147,7 @@ public class TileEntityLittleBlocks extends TileEntity {
 		}
 	}
 
-	public void setContent(int x, int y, int z, int id) {
+	public void setContent(int x, int y, int z, int id, EntityPlayer entityplayer) {
 		if (x >= size | y >= size | z >= size) {
 			if (worldObj.getBlockId(xCoord + (x >= size ? 1 : 0), yCoord
 					+ (y >= size ? 1 : 0), zCoord + (z >= size ? 1 : 0)) == 0) {
@@ -161,7 +163,7 @@ public class TileEntityLittleBlocks extends TileEntity {
 								yCoord + (y >= size ? 1 : 0), zCoord
 										+ (z >= size ? 1 : 0));
 				tile.setContent(x >= size ? x - size : x, y >= size ? y - size
-						: y, z >= size ? z - size : z, id);
+						: y, z >= size ? z - size : z, id, entityplayer);
 			}
 			return;
 		} else if (x < 0 | z < 0 | y < 0) {
@@ -177,7 +179,7 @@ public class TileEntityLittleBlocks extends TileEntity {
 						.getBlockTileEntity(xCoord - (x < 0 ? 1 : 0), yCoord
 								- (y < 0 ? 1 : 0), zCoord - (z < 0 ? 1 : 0));
 				tile.setContent(x < 0 ? x + size : x, y < 0 ? y + size : y,
-						z < 0 ? z + size : z, id);
+						z < 0 ? z + size : z, id, entityplayer);
 			}
 			return;
 		}
@@ -187,7 +189,7 @@ public class TileEntityLittleBlocks extends TileEntity {
 
 		if (lastId != id) {
 			littleWorld.idModified((this.xCoord << 3) + x, (this.yCoord << 3)
-					+ y, (this.zCoord << 3) + z, lastId, id);
+					+ y, (this.zCoord << 3) + z, lastId, id, entityplayer);
 		}
 	}
 
@@ -236,7 +238,7 @@ public class TileEntityLittleBlocks extends TileEntity {
 		}
 	}
 
-	public void setContent(int x, int y, int z, int id, int metadata) {
+	public void setContent(int x, int y, int z, int id, int metadata, EntityPlayer entityplayer) {
 		if (x >= size | y >= size | z >= size) {
 			if (worldObj.getBlockId(xCoord + (x >= size ? 1 : 0), yCoord
 					+ (y >= size ? 1 : 0), zCoord + (z >= size ? 1 : 0)) == 0) {
@@ -252,7 +254,7 @@ public class TileEntityLittleBlocks extends TileEntity {
 								yCoord + (y >= size ? 1 : 0), zCoord
 										+ (z >= size ? 1 : 0));
 				tile.setContent(x >= size ? x - size : x, y >= size ? y - size
-						: y, z >= size ? z - size : z, id, metadata);
+						: y, z >= size ? z - size : z, id, metadata, entityplayer);
 			}
 			return;
 		} else if (x < 0 | z < 0 | y < 0) {
@@ -268,7 +270,7 @@ public class TileEntityLittleBlocks extends TileEntity {
 						.getBlockTileEntity(xCoord - (x < 0 ? 1 : 0), yCoord
 								- (y < 0 ? 1 : 0), zCoord - (z < 0 ? 1 : 0));
 				tile.setContent(x < 0 ? x + size : x, y < 0 ? y + size : y,
-						z < 0 ? z + size : z, id, metadata);
+						z < 0 ? z + size : z, id, metadata, entityplayer);
 			}
 			return;
 		}
@@ -284,7 +286,7 @@ public class TileEntityLittleBlocks extends TileEntity {
 		}
 		if (lastId != id) {
 			littleWorld.idModified((this.xCoord << 3) + x, (this.yCoord << 3)
-					+ y, (this.zCoord << 3) + z, lastId, id);
+					+ y, (this.zCoord << 3) + z, lastId, id, entityplayer);
 		}
 	}
 
@@ -400,7 +402,8 @@ public class TileEntityLittleBlocks extends TileEntity {
 		nbttagcompound.setTag("Tiles", tilesTag);
 	}
 
-	public Packet getDescriptionPacket() {
+	@Override
+    public Packet getAuxillaryInfoPacket() {
 		return this.getUpdatePacket();
 	}
 

@@ -7,14 +7,16 @@ import net.minecraft.src.AxisAlignedBB;
 import net.minecraft.src.BaseMod;
 import net.minecraft.src.Block;
 import net.minecraft.src.BlockContainer;
+import net.minecraft.src.Entity;
 import net.minecraft.src.EntityPlayer;
+import net.minecraft.src.EnumGameType;
 import net.minecraft.src.IBlockAccess;
 import net.minecraft.src.ItemStack;
 import net.minecraft.src.Material;
 import net.minecraft.src.ModLoader;
 import net.minecraft.src.MovingObjectPosition;
 import net.minecraft.src.TileEntity;
-import net.minecraft.src.Vec3D;
+import net.minecraft.src.Vec3;
 import net.minecraft.src.World;
 
 public class BlockLittleBlocks extends BlockContainer {
@@ -30,7 +32,7 @@ public class BlockLittleBlocks extends BlockContainer {
 			if (tile.isEmpty()) {
 				return super.removeBlockByPlayer(world, player, x, y, z);
 			} else {
-				if (world.getWorldInfo().getGameType() == 1) {
+				if (world.getWorldInfo().getGameType() == EnumGameType.CREATIVE) {
 					this.onBlockClicked(world, x, y, z, player);
 					return false;
 				}
@@ -75,21 +77,21 @@ public class BlockLittleBlocks extends BlockContainer {
 	}
 
 	@Override
-	public boolean blockActivated(World world, int x, int y, int z,
-			EntityPlayer entityplayer) {
+	public boolean onBlockActivated(World world, int x, int y, int z,
+			EntityPlayer entityplayer, int i, float j, float k, float l) {
 		if (entityplayer.getCurrentEquippedItem() != null) {
 			int itemID = entityplayer.getCurrentEquippedItem().itemID;
 			Block[] blocks = Block.blocksList;
-			for (int i = 0; i < blocks.length; i++) {
-				if (blocks[i] != null && blocks[i].blockID == itemID) {
-					Block theBlock = blocks[i];
-					if (theBlock.hasTileEntity()) {
+			for (int blockID = 0; blockID < blocks.length; i++) {
+				if (blocks[blockID] != null && blocks[blockID].blockID == itemID) {
+					Block theBlock = blocks[blockID];
+					if (theBlock.hasTileEntity(0)) {
 						return false;
 					}
 				}
 			}
 		}
-		return LittleBlocks.blockActivated(world, x, y, z, entityplayer, this);
+		return LittleBlocks.blockActivated(world, x, y, z, entityplayer, this, j, k, l);
 	}
 
 	public void dropLittleBlockAsItem_do(World world, int x, int y, int z,
@@ -107,8 +109,8 @@ public class BlockLittleBlocks extends BlockContainer {
 	}
 
 	@Override
-	public TileEntity getBlockEntity() {
-		return new TileEntityLittleBlocks();
+	public TileEntity createNewTileEntity(World world) {
+		return new TileEntityLittleBlocks(world);
 	}
 
 	@Override
@@ -168,37 +170,36 @@ public class BlockLittleBlocks extends BlockContainer {
 
 	@SuppressWarnings("rawtypes")
 	@Override
-	public void getCollidingBoundingBoxes(World world, int i, int j, int k,
-			AxisAlignedBB axisalignedbb, ArrayList arraylist) {
+	public void addCollidingBlockToList(World world, int x, int y, int z,
+			AxisAlignedBB axisalignedbb, List list, Entity entity) {
 		TileEntityLittleBlocks tile = (TileEntityLittleBlocks) world
-				.getBlockTileEntity(i, j, k);
+				.getBlockTileEntity(x, y, z);
 
 		int[][][] content = tile.getContent();
 		float m = TileEntityLittleBlocks.size;
 
-		for (int x = 0; x < content.length; x++) {
-			for (int y = 0; y < content[x].length; y++) {
-				for (int z = 0; z < content[x][y].length; z++) {
-					if (content[x][y][z] > 0) {
-						Block block = Block.blocksList[content[x][y][z]];
+		for (int x1 = 0; x1 < content.length; x1++) {
+			for (int y1 = 0; y1 < content[x1].length; y1++) {
+				for (int z1 = 0; z1 < content[x1][y1].length; z1++) {
+					if (content[x1][y1][z1] > 0) {
+						Block block = Block.blocksList[content[x1][y1][z1]];
 						setBlockBounds((float) (x + block.minX) / m,
-								(float) (y + block.minY) / m,
-								(float) (z + block.minZ) / m,
-								(float) (x + block.maxX) / m,
-								(float) (y + block.maxY) / m,
-								(float) (z + block.maxZ) / m);
-						super.getCollidingBoundingBoxes(world, i, j, k,
-								axisalignedbb, arraylist);
+								(float) (y1 + block.minY) / m,
+								(float) (z1 + block.minZ) / m,
+								(float) (x1 + block.maxX) / m,
+								(float) (y1 + block.maxY) / m,
+								(float) (z1 + block.maxZ) / m);
+						super.addCollidingBlockToList(world, x, y, z, axisalignedbb, list, entity);
 					}
 				}
 			}
 		}
-		setBlockBoundsBasedOnSelection(world, i, j, k);
+		setBlockBoundsBasedOnSelection(world, x, y, z);
 	}
 
 	@Override
 	public MovingObjectPosition collisionRayTrace(World world, int i, int j,
-			int k, Vec3D player, Vec3D view) {
+			int k, Vec3 player, Vec3 view) {
 		TileEntityLittleBlocks tile = (TileEntityLittleBlocks) world
 				.getBlockTileEntity(i, j, k);
 
@@ -359,7 +360,7 @@ public class BlockLittleBlocks extends BlockContainer {
 				setBlockBoundsBasedOnSelection(world, i, j, k);
 
 				return new MovingObjectPosition(i, j, k, (Byte) min[1],
-						((Vec3D) min[0]).addVector(i, j, k));
+						((Vec3) min[0]).addVector(i, j, k));
 			}
 		}
 		xSelected = -10;
@@ -372,13 +373,13 @@ public class BlockLittleBlocks extends BlockContainer {
 	}
 
 	private Object[] rayTraceBound(AxisAlignedBB bound, int i, int j, int k,
-			Vec3D player, Vec3D view) {
-		Vec3D vec3d2 = player.getIntermediateWithXValue(view, bound.minX);
-		Vec3D vec3d3 = player.getIntermediateWithXValue(view, bound.maxX);
-		Vec3D vec3d4 = player.getIntermediateWithYValue(view, bound.minY);
-		Vec3D vec3d5 = player.getIntermediateWithYValue(view, bound.maxY);
-		Vec3D vec3d6 = player.getIntermediateWithZValue(view, bound.minZ);
-		Vec3D vec3d7 = player.getIntermediateWithZValue(view, bound.maxZ);
+			Vec3 player, Vec3 view) {
+		Vec3 vec3d2 = player.getIntermediateWithXValue(view, bound.minX);
+		Vec3 vec3d3 = player.getIntermediateWithXValue(view, bound.maxX);
+		Vec3 vec3d4 = player.getIntermediateWithYValue(view, bound.minY);
+		Vec3 vec3d5 = player.getIntermediateWithYValue(view, bound.maxY);
+		Vec3 vec3d6 = player.getIntermediateWithZValue(view, bound.minZ);
+		Vec3 vec3d7 = player.getIntermediateWithZValue(view, bound.maxZ);
 		if (!isVecInsideYZBounds(bound, vec3d2)) {
 			vec3d2 = null;
 		}
@@ -397,7 +398,7 @@ public class BlockLittleBlocks extends BlockContainer {
 		if (!isVecInsideXYBounds(bound, vec3d7)) {
 			vec3d7 = null;
 		}
-		Vec3D vec3d8 = null;
+		Vec3 vec3d8 = null;
 		if (vec3d2 != null
 				&& (vec3d8 == null || player.distanceTo(vec3d2) < player
 						.distanceTo(vec3d8))) {
@@ -453,7 +454,7 @@ public class BlockLittleBlocks extends BlockContainer {
 		return new Object[] { vec3d8, side, player.distanceTo(vec3d8) };
 	}
 
-	private boolean isVecInsideYZBounds(AxisAlignedBB bound, Vec3D vec3d) {
+	private boolean isVecInsideYZBounds(AxisAlignedBB bound, Vec3 vec3d) {
 		if (vec3d == null) {
 			return false;
 		} else {
@@ -462,7 +463,7 @@ public class BlockLittleBlocks extends BlockContainer {
 		}
 	}
 
-	private boolean isVecInsideXZBounds(AxisAlignedBB bound, Vec3D vec3d) {
+	private boolean isVecInsideXZBounds(AxisAlignedBB bound, Vec3 vec3d) {
 		if (vec3d == null) {
 			return false;
 		} else {
@@ -471,7 +472,7 @@ public class BlockLittleBlocks extends BlockContainer {
 		}
 	}
 
-	private boolean isVecInsideXYBounds(AxisAlignedBB bound, Vec3D vec3d) {
+	private boolean isVecInsideXYBounds(AxisAlignedBB bound, Vec3 vec3d) {
 		if (vec3d == null) {
 			return false;
 		} else {

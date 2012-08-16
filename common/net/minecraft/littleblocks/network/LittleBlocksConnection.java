@@ -3,17 +3,23 @@ package net.minecraft.littleblocks.network;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 
+import cpw.mods.fml.common.network.NetworkRegistry;
+import cpw.mods.fml.common.network.Player;
+
 import net.minecraft.littleblocks.LittleBlocks;
 import net.minecraft.littleblocks.LittleBlocksCore;
 import net.minecraft.littleblocks.network.EurysNetworkCore.INetworkConnections;
 import net.minecraft.littleblocks.network.EurysNetworkCore.PacketIds;
 import net.minecraft.littleblocks.network.EurysNetworkCore.PacketLittleBlocks;
 import net.minecraft.littleblocks.network.EurysNetworkCore.PacketTileEntityLB;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.src.EntityPlayer;
+import net.minecraft.src.NetHandler;
+import net.minecraft.src.NetLoginHandler;
 import net.minecraft.src.NetworkManager;
 import net.minecraft.src.Packet1Login;
+import net.minecraft.src.Packet250CustomPayload;
 import net.minecraft.src.World;
-import net.minecraft.src.forge.MessageManager;
 
 public class LittleBlocksConnection implements INetworkConnections {
 	private static String modName = LittleBlocksCore.modName;
@@ -21,10 +27,10 @@ public class LittleBlocksConnection implements INetworkConnections {
 	private static String modChannel = LittleBlocksCore.modChannel;
 
 	@Override
-	public void onPacketData(NetworkManager network, String channel,
-			byte[] bytes) {
+	public void onPacketData(NetworkManager network, Packet250CustomPayload payload,
+			Player player) {
 		DataInputStream data = new DataInputStream(new ByteArrayInputStream(
-				bytes));
+				payload.data));
 		try {
 			World world = LittleBlocks.getWorld(network);
 			EntityPlayer entityplayer = LittleBlocks.getPlayer(network);
@@ -49,18 +55,43 @@ public class LittleBlocksConnection implements INetworkConnections {
 	}
 
 	@Override
-	public void onConnect(NetworkManager network) {
-	}
-
-	@Override
-	public void onLogin(NetworkManager network, Packet1Login login) {
-		MessageManager.getInstance().registerChannel(network, this,
+	public void playerLoggedIn(Player player, NetHandler netHandler,
+			NetworkManager manager) {
+		NetworkRegistry.instance().registerChannel(this,
 				LittleBlocksConnection.modChannel);
 	}
 
 	@Override
-	public void onDisconnect(NetworkManager network, String message,
-			Object[] args) {
+	public String connectionReceived(NetLoginHandler netHandler,
+			NetworkManager manager) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
+	@Override
+	public void connectionOpened(NetHandler netClientHandler, String server,
+			int port, NetworkManager manager) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void connectionOpened(NetHandler netClientHandler,
+			MinecraftServer server, NetworkManager manager) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void connectionClosed(NetworkManager manager) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void clientLoggedIn(NetHandler clientHandler,
+			NetworkManager manager, Packet1Login login) {
+		NetworkRegistry.instance().registerChannel(this,
+				LittleBlocksConnection.modChannel);
+	}
 }

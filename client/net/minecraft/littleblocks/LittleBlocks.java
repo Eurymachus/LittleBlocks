@@ -1,58 +1,95 @@
 package net.minecraft.littleblocks;
 
+import org.lwjgl.opengl.GL11;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.littleblocks.network.PacketHandler;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.src.Block;
 import net.minecraft.src.EntityPlayer;
+import net.minecraft.src.EntityPlayerMP;
 import net.minecraft.src.IBlockAccess;
 import net.minecraft.src.ItemBucket;
+import net.minecraft.src.ItemInWorldManager;
 import net.minecraft.src.ItemStack;
 import net.minecraft.src.ModLoader;
 import net.minecraft.src.NetworkManager;
-import net.minecraft.src.PlayerController;
-import net.minecraft.src.PlayerControllerCreative;
 import net.minecraft.src.RenderBlocks;
 import net.minecraft.src.Tessellator;
 import net.minecraft.src.World;
 import net.minecraft.src.mod_LittleBlocks;
 
-import org.lwjgl.opengl.GL11;
-
 public class LittleBlocks {
-	public static boolean blockActivated(World world, int x, int y, int z,
-			EntityPlayer entityplayer, BlockLittleBlocks block) {
-		PacketHandler.Output.blockUpdate(world, entityplayer, x, y, z, block,
-				LittleBlocksCore.blockActivateCommand);
+	public static World realWorld;
+	public static boolean optifine;
+	public static String minecraftDir = Minecraft.getMinecraftDir().toString();
 
+	public static void initialize() {
+		ModLoader.setInGameHook(mod_LittleBlocks.instance, true, true);
+		LittleBlocksCore.addItems();
+		LittleBlocksCore.addNames();
+		LittleBlocksCore.addRecipes();
+		ModLoader.registerTileEntity(TileEntityLittleBlocks.class,
+				"littleBlocks", new LittleBlocksRenderer());
+
+		try {
+			mod_LittleBlocks.instance.getClass().getClassLoader()
+					.loadClass("TextureHDCompassFX");
+			optifine = true;
+		} catch (ClassNotFoundException e) {
+			optifine = false;
+		}
+	}
+	
+	public static boolean blockActivated(World world, int x, int y, int z,
+			EntityPlayer entityplayer, BlockLittleBlocks block, float i, float j, float k) {
+		if (block.xSelected == -10) {
+			return true;
+		}
 		TileEntityLittleBlocks tile = (TileEntityLittleBlocks) world
 				.getBlockTileEntity(x, y, z);
 
-		PlayerController playerControler = ModLoader.getMinecraftInstance().playerController;
-		if (playerControler.onPlayerRightClick(entityplayer,
+		EntityPlayerMP player = (EntityPlayerMP) entityplayer;
+
+		ItemInWorldManager itemManager = player.theItemInWorldManager;
+		if (itemManager.activateBlockOrUseItem(entityplayer,
 				tile.getLittleWorld(), entityplayer.getCurrentEquippedItem(),
 				(x << 3) + block.xSelected, (y << 3) + block.ySelected,
-				(z << 3) + block.zSelected, block.side)) {
+				(z << 3) + block.zSelected, block.side, i, j, k)) {
 			return true;
 		} else if (entityplayer.getCurrentEquippedItem() != null
 				&& entityplayer.getCurrentEquippedItem().getItem() instanceof ItemBucket) {
-			playerControler.sendUseItem(entityplayer, tile.getLittleWorld(),
-					entityplayer.getCurrentEquippedItem());
+			itemManager.activateBlockOrUseItem(entityplayer, tile.getLittleWorld(),
+					entityplayer.getCurrentEquippedItem(),
+					(x << 3) + block.xSelected, (y << 3) + block.ySelected,
+					(z << 3) + block.zSelected, block.side, i, j, k);
 			return true;
 		}
 		return false;
 	}
 
+	public static boolean onTickInGame(MinecraftServer minecraft) {
+		if (minecraft.worlds != null) {
+			for (World world : minecraft.worlds) {
+				TileEntityLittleBlocks.getLittleWorld(world)
+				.tickUpdates(false);
+			}
+			
+		}
+		return true;
+	}
+
 	public static void blockClicked(World world, int x, int y, int z,
 			EntityPlayer entityplayer, BlockLittleBlocks block) {
-		PacketHandler.Output.blockUpdate(world, entityplayer, x, y, z, block,
-				LittleBlocksCore.blockClickCommand);
 		TileEntityLittleBlocks tile = (TileEntityLittleBlocks) world
 				.getBlockTileEntity(x, y, z);
+
+		EntityPlayerMP player = (EntityPlayerMP) entityplayer;
 
 		int content = tile.getContent(block.xSelected, block.ySelected,
 				block.zSelected);
 		if (content > 0 && Block.blocksList[content] != null) {
-			if (!(ModLoader.getMinecraftInstance().playerController instanceof PlayerControllerCreative)) {
+			if (!player.theItemInWorldManager.isCreative()) {
 				int idDropped = Block.blocksList[content].idDropped(tile
 						.getMetadata(block.xSelected, block.ySelected,
 								block.zSelected), world.rand, 0);
@@ -71,7 +108,7 @@ public class LittleBlocks {
 			}
 		}
 
-		tile.setContent(block.xSelected, block.ySelected, block.zSelected, 0);
+		tile.setContent(block.xSelected, block.ySelected, block.zSelected, 0, entityplayer);
 	}
 
 	public static int getLightBrightnessForSkyBlocks(World realWorld, int i,
@@ -83,27 +120,6 @@ public class LittleBlocks {
 	public static float getBrightness(World realWorld, int i, int j, int k,
 			int l) {
 		return realWorld.getBrightness(i, j, k, l);
-	}
-
-	public static boolean optifine;
-	public static String mode = "Client";
-	public static String minecraftDir = Minecraft.getMinecraftDir().toString();;
-
-	public static void initialize() {
-		ModLoader.setInGameHook(mod_LittleBlocks.instance, true, true);
-		LittleBlocksCore.addItems();
-		LittleBlocksCore.addNames();
-		LittleBlocksCore.addRecipes();
-		ModLoader.registerTileEntity(TileEntityLittleBlocks.class,
-				"littleBlocks", new LittleBlocksRenderer());
-
-		try {
-			mod_LittleBlocks.instance.getClass().getClassLoader()
-					.loadClass("TextureHDCompassFX");
-			optifine = true;
-		} catch (ClassNotFoundException e) {
-			optifine = false;
-		}
 	}
 
 	public static boolean renderWorldBlock(RenderBlocks renderblocks,

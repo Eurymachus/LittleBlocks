@@ -2,10 +2,11 @@ package net.minecraft.littleblocks;
 
 import java.io.File;
 
+import cpw.mods.fml.common.network.NetworkRegistry;
+
 import net.minecraft.littleblocks.network.LittleBlocksConnection;
 import net.minecraft.src.MLProp;
-import net.minecraft.src.forge.Configuration;
-import net.minecraft.src.forge.MinecraftForge;
+import net.minecraftforge.common.Configuration;
 
 public class LittleBlocksCore {
 	public static final String version = "1.2";
@@ -26,7 +27,7 @@ public class LittleBlocksCore {
 
 	public static void initialize() {
 		LittleBlocks.initialize();
-		MinecraftForge.registerConnectionHandler(new LittleBlocksConnection());
+		NetworkRegistry.instance().registerConnectionHandler(new LittleBlocksConnection());
 		initialized = true;
 	}
 

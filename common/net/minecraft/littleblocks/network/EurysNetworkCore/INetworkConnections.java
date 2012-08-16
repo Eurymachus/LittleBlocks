@@ -1,22 +1,78 @@
 package net.minecraft.littleblocks.network.EurysNetworkCore;
 
+import cpw.mods.fml.common.network.IConnectionHandler;
+import cpw.mods.fml.common.network.IPacketHandler;
+import cpw.mods.fml.common.network.Player;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.src.NetHandler;
+import net.minecraft.src.NetLoginHandler;
 import net.minecraft.src.NetworkManager;
 import net.minecraft.src.Packet1Login;
-import net.minecraft.src.forge.IConnectionHandler;
-import net.minecraft.src.forge.IPacketHandler;
+import net.minecraft.src.Packet250CustomPayload;
 
 public interface INetworkConnections extends IConnectionHandler, IPacketHandler {
 	@Override
-	public void onPacketData(NetworkManager network, String channel,
-			byte[] bytes);
+	public void onPacketData(NetworkManager manager, Packet250CustomPayload packet, Player player);
 
-	@Override
-	public void onConnect(NetworkManager network);
+    /**
+     * Called when a player logs into the server
+     *  SERVER SIDE
+     *
+     * @param player
+     * @param netHandler
+     * @param manager
+     */
+    void playerLoggedIn(Player player, NetHandler netHandler, NetworkManager manager);
 
-	@Override
-	public void onLogin(NetworkManager network, Packet1Login login);
+    /**
+     * If you don't want the connection to continue, return a non-empty string here
+     * If you do, you can do other stuff here- note no FML negotiation has occured yet
+     * though the client is verified as having FML installed
+     *
+     * SERVER SIDE
+     *
+     * @param netHandler
+     * @param manager
+     * @return
+     */
+    String connectionReceived(NetLoginHandler netHandler, NetworkManager manager);
 
-	@Override
-	public void onDisconnect(NetworkManager network, String message,
-			Object[] args);
+    /**
+     * Fired when a remote connection is opened
+     * CLIENT SIDE
+     *
+     * @param netClientHandler
+     * @param server
+     * @param port
+     */
+    void connectionOpened(NetHandler netClientHandler, String server, int port, NetworkManager manager);
+    /**
+     *
+     * Fired when a local connection is opened
+     *
+     * CLIENT SIDE
+     *
+     * @param netClientHandler
+     * @param server
+     */
+    void connectionOpened(NetHandler netClientHandler, MinecraftServer server, NetworkManager manager);
+
+    /**
+     * Fired when a connection closes
+     *
+     * ALL SIDES
+     *
+     * @param manager
+     */
+    void connectionClosed(NetworkManager manager);
+
+    /**
+     * Fired when the client established the connection to the server
+     *
+     * CLIENT SIDE
+     * @param clientHandler
+     * @param manager
+     * @param login
+     */
+    void clientLoggedIn(NetHandler clientHandler, NetworkManager manager, Packet1Login login);
 }

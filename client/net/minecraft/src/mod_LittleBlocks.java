@@ -5,6 +5,7 @@ import net.minecraft.littleblocks.BlockLittleBlocks;
 import net.minecraft.littleblocks.LittleBlocks;
 import net.minecraft.littleblocks.LittleBlocksCore;
 import net.minecraft.littleblocks.TileEntityLittleBlocks;
+import net.minecraft.server.MinecraftServer;
 
 public class mod_LittleBlocks extends BaseMod {
 	public static BaseMod instance;
@@ -44,6 +45,11 @@ public class mod_LittleBlocks extends BaseMod {
 		TileEntityLittleBlocks.getLittleWorld(minecraft.theWorld).tickUpdates(
 				false);
 		return true;
+	}
+
+	@Override
+	public boolean onTickInGame(MinecraftServer minecraft) {
+		return LittleBlocks.onTickInGame(minecraft);
 	}
 
 	@Override
